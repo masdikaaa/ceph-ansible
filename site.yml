@@ -1,0 +1,38 @@
+---
+- name: Common prep on all nodes
+  hosts: all
+  become: true
+  roles:
+    - common
+    - cephadm_install
+
+- name: Bootstrap Ceph (only once on first mon)
+  hosts: mons[0]
+  become: true
+  roles:
+    - ceph_bootstrap
+
+- name: Add hosts & deploy MON/MGR
+  hosts: mons[0]
+  become: true
+  roles:
+    - ceph_add_hosts
+    - ceph_services
+
+- name: Add OSDs
+  hosts: mons[0]
+  become: true
+  roles:
+    - ceph_osd
+
+- name: Deploy RGW realm/zone and service
+  hosts: mons[0]
+  become: true
+  roles:
+    - ceph_rgw
+
+- name: Install & Configure HAProxy (endpoint tunggal S3)
+  hosts: haproxy
+  become: true
+  roles:
+    - haproxy
