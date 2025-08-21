@@ -1,0 +1,14 @@
+---
+- name: Show devices across cluster (for debug)
+  shell: ceph orch device ls
+  changed_when: false
+  failed_when: false
+
+- name: Add OSDs per host:device
+  loop: "{{ groups['osds'] | product(osd_devices) | list }}"
+  loop_control:
+    loop_var: osdpair
+  shell: "ceph orch daemon add osd {{ osdpair.0 }}:{{ osdpair.1 }} || true"
+  register: addosd
+  failed_when: false
+  changed_when: "'Created osd' in addosd.stdout"
