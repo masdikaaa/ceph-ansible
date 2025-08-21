@@ -1,0 +1,27 @@
+---
+- name: Install cephadm
+  apt:
+    name: cephadm
+    state: present
+  become: true
+
+- name: Pull ceph image (from quay.io, fallback to docker.io)
+  shell: |
+    podman pull quay.io/ceph/ceph:v19.2.3 || podman pull docker.io/ceph/ceph:v19.2.3
+  args:
+    executable: /bin/bash
+  register: pullimg
+  changed_when: "'Downloaded newer' in pullimg.stdout or 'Image is up to date' in pullimg.stdout"
+  become: true
+
+- name: Bootstrap Ceph cluster (only run on ceph-1)
+  shell: |
+    cephadm --image quay.io/ceph/ceph:v19.2.3 bootstrap \
+      --mon-ip 103.168.146.210 \
+      --ssh-user root \
+      --initial-dashboard-user root \
+      --initial-dashboard-password 'Andikaferdi11'
+  args:
+    creates: /etc/ceph/ceph.conf
+  when: inventory_hostname == "ceph-1"
+  become: true
