@@ -1,0 +1,32 @@
+global
+    log /dev/log local0
+    log /dev/log local1 notice
+    chroot /var/lib/haproxy
+    stats socket /run/haproxy/admin.sock mode 660 level admin
+    stats timeout 30s
+    user haproxy
+    group haproxy
+    daemon
+
+defaults
+    log     global
+    mode    http
+    option  httplog
+    option  dontlognull
+    timeout connect 5s
+    timeout client  50s
+    timeout server  50s
+
+frontend rgw_frontend
+    bind *:{{ haproxy_listen_port }}
+    mode http
+    option httplog
+    default_backend rgw_backend
+
+backend rgw_backend
+    mode http
+    balance roundrobin
+    option httpchk GET /
+    server ceph1 {{ ceph_hosts_map[0].ip }}:{{ rgw_backend_port }} check
+    server ceph2 {{ ceph_hosts_map[1].ip }}:{{ rgw_backend_port }} check
+    server ceph3 {{ ceph_hosts_map[2].ip }}:{{ rgw_backend_port }} check
