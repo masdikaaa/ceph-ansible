@@ -1,0 +1,6 @@
+---
+- name: Ensure MON on 3 nodes
+  shell: ceph orch apply mon --placement="ceph-1,ceph-2,ceph-3" || true
+
+- name: Ensure MGR count 2
+  shell: ceph orch apply mgr --placement="count:2" || true
