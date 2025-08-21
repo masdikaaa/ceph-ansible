@@ -1,0 +1,20 @@
+---
+- name: Create RGW realm
+  shell: radosgw-admin realm create --rgw-realm={{ rgw_realm }} --default || true
+
+- name: Create RGW zonegroup
+  shell: radosgw-admin zonegroup create --rgw-zonegroup={{ rgw_zonegroup }} --master --default || true
+
+- name: Create RGW zone
+  shell: radosgw-admin zone create --rgw-zonegroup={{ rgw_zonegroup }} --rgw-zone={{ rgw_zone }} --master --default || true
+
+- name: Commit RGW period
+  shell: radosgw-admin period update --commit || true
+
+- name: Apply RGW service
+  shell: ceph orch apply rgw {{ rgw_realm }}.{{ rgw_zone }} --placement="ceph-1,ceph-2,ceph-3" || true
+
+- name: Check RGW daemons
+  shell: ceph orch ps --daemon_type rgw
+  register: rgwps
+  changed_when: false
