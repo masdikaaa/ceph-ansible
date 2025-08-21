@@ -1,0 +1,46 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Install base packages
+  apt:
+    name: "{{ common_packages }}"
+    state: present
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Enable & start chrony
+  systemd:
+    name: chrony
+    enabled: true
+    state: started
+
+- name: Ensure /etc/hosts has cluster mapping
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ item.ip }} {{ item.name }}"
+    state: present
+  loop: "{{ ceph_hosts_map }}"
+
+- name: Set hostname (optional)
+  when: set_hostnames
+  command: hostnamectl set-hostname {{ inventory_hostname }}
+  args:
+    creates: "/etc/hostname"
+
+- name: Allow UFW rules (optional)
+  when: enable_ufw_rules
+  block:
+    - name: Allow SSH
+      command: ufw allow 22/tcp
+      ignore_errors: true
+    - name: Allow Ceph public
+      command: ufw allow 3300,6789/tcp
+      ignore_errors: true
+    - name: Allow Ceph OSD ports
+      command: ufw allow 6800:7300/tcp
+      ignore_errors: true
+    - name: Reload ufw
+      command: ufw reload
+      ignore_errors: true
