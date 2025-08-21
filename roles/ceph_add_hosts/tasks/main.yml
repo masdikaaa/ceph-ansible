@@ -1,0 +1,25 @@
+---
+- name: Get cephadm public key
+  shell: ceph cephadm get-pub-key
+  register: ceph_pubkey
+
+- name: Ensure root authorized_keys exists on other nodes
+  delegate_to: "{{ item }}"
+  lineinfile:
+    path: /root/.ssh/authorized_keys
+    create: yes
+    mode: '0600'
+    line: "{{ ceph_pubkey.stdout }}"
+    state: present
+  loop: "{{ groups['all'] | difference([inventory_hostname]) }}"
+
+- name: Add host ceph-2
+  shell: ceph orch host add ceph-2 103.168.146.206 || true
+
+- name: Add host ceph-3
+  shell: ceph orch host add ceph-3 103.168.146.207 || true
+
+- name: List hosts
+  shell: ceph orch host ls
+  register: hostls
+  changed_when: false
