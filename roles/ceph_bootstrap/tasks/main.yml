@@ -1,0 +1,14 @@
+---
+- name: Check if ceph already bootstrapped
+  stat:
+    path: /etc/ceph/ceph.conf
+  register: ceph_conf
+
+- name: Bootstrap cluster
+  shell: >
+    cephadm --image {{ ceph_image }} bootstrap
+    --mon-ip {{ mon_ip }}
+    --ssh-user root
+    --initial-dashboard-user {{ dash_user }}
+    --initial-dashboard-password '{{ dash_pass }}'
+  when: not ceph_conf.stat.exists
